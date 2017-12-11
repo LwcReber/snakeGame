@@ -28,26 +28,24 @@ let SnakeModel = {
     }
   },
   snakeMove (direction) {
-    console.log(direction);
-    let newHead = { x: this.snake[this.snake.length - 1].x + 1, y: this.snake[this.snake.length - 1].y };
+    let length = this.snake.length;
+    let newHead = this.snake[length - 1];
     switch (direction) {
-    case 'left':
-        newHead = { x: this.snake[this.snake.length - 1].x - 1, y: this.snake[this.snake.length - 1].y }
-        break;
-    case 'up':
-        newHead = { x: this.snake[this.snake.length - 1].x, y: this.snake[this.snake.length - 1].y - 1 }
-        break;
-    case 'right':
-        newHead = { x: this.snake[this.snake.length - 1].x + 1, y: this.snake[this.snake.length - 1].y }
-        break;
-    case 'down':
-        newHead = { x: this.snake[this.snake.length - 1].x, y: this.snake[this.snake.length - 1].y + 1}
-        break;
-    default:
-        return;
-        break;
+      case 'left':
+          newHead = { x: this.snake[length - 1].x - 1, y: this.snake[length - 1].y }
+          break;
+      case 'up':
+          newHead = { x: this.snake[length - 1].x, y: this.snake[length - 1].y - 1 }
+          break;
+      case 'right':
+          newHead = { x: this.snake[length - 1].x + 1, y: this.snake[length - 1].y }
+          break;
+      case 'down':
+          newHead = { x: this.snake[length - 1].x, y: this.snake[length - 1].y + 1}
+          break;
+      default:
+          break;
     }
-    console.log(newHead);
     // 添加蛇头部
     this.snake.push(newHead);
     // 清除画布
