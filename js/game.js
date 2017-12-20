@@ -22,6 +22,7 @@ let SnakeModel = {
   numCols: 5,
   snake: [],
   init () {
+    this.snake.length = 0;
     // 第一个元素是尾部
     for (row = 0; row < this.numRows; row++) {
         this.snake.push({x: row, y: 0});
@@ -46,12 +47,18 @@ let SnakeModel = {
       default:
           break;
     }
-    // 添加蛇头部
-    this.snake.push(newHead);
-    // 清除画布
-    SnakeControl.clearRect(this.snake[0]);
-    // 移除蛇尾部
-    this.snake.shift();
+    if (SnakeControl.checkCollisions(newHead, this.snake)) {
+      // 添加蛇头部
+      this.snake.push(newHead);
+      // 清除画布
+      SnakeControl.clearTail(this.snake[0]);
+      // 移除蛇尾部
+      this.snake.shift();
+    }
+    // 游戏是否结束
+    if(!SnakeControl.gameStartS) {
+      SnakeControl.gameStart();
+    }
   }
 }
 
@@ -59,23 +66,35 @@ let SnakeModel = {
 let SnakeControl = {
   speed: 300,
   curDirect: 'right', // 记录当前方向
+  gameStartS:  true, // 游戏开始状态
+  timer: '',
   init () {
+    clearTimeout(this.timer);
     SnakeModel.init();
     this.move();
+  },
+  gameStart () {
+    this.gameStartS = true;
+    this.init();
+    SnakeView.init();
   },
   // 上下左右按键移动蛇的位置
   handleInput (keyCode) {
       switch (keyCode) {
       case 'left':
+          // if(this.curDirect == 'right' || this.curDirect == 'left') return;
           this.curDirect = keyCode;
           break;
       case 'up':
+          //if(this.curDirect == 'down' || this.curDirect == 'up') return;
           this.curDirect = keyCode;
           break;
       case 'right':
+        //  if(this.curDirect == 'left' || this.curDirect == 'right') return;
           this.curDirect = keyCode;
           break;
       case 'down':
+        //  if(this.curDirect == 'up' || this.curDirect == 'down') return;
           this.curDirect = keyCode;
           break;
       default:
@@ -86,13 +105,32 @@ let SnakeControl = {
     return SnakeModel.snake;
   },
   move () {
-    setInterval(() => {
+    this.timer = setInterval(() => {
       SnakeModel.snakeMove(this.curDirect);
-      SnakeView.drawSnake();
+      if(this.gameStartS == true) {
+        SnakeView.drawSnake();
+      }
     }, this.speed);
   },
-  clearRect (tail) {
-    ctx.clearRect(tail.x * SnakeView.width, tail.y * SnakeView.height, SnakeView.width, SnakeView.height);
+  clearTail (tail) {
+    SnakeView.clearTail(tail)
+  },
+  // 检测是否碰撞
+  checkCollisions (newHead, oldSNake) {
+    let snake = oldSNake;
+    let length = oldSNake.length;
+    // 遍历蛇的坐标，与蛇头作对比，如果蛇头与蛇身坐标相等即为碰撞
+    snake.forEach((item,index) => {
+      if(index == length-1) return;
+      if(newHead.x == item.x && newHead.y == item.y) {
+        alert('游戏失败');
+        this.gameStartS = false;
+        // 清除画布
+        SnakeView.clearCanvas();
+        return false;
+      }
+    });
+    return true;
   }
 }
 
@@ -103,7 +141,7 @@ let SnakeView = {
   row: 0,
   col: 0,
   snakeColor: '#89EA65',
-  snakeArr: '',
+  snakeArr: [],
   init () {
     this.snakeArr = SnakeControl.getSnake();
     this.drawSnake();
@@ -114,6 +152,11 @@ let SnakeView = {
       ctx.fillRect(item.x * this.width, item.y * this.height, this.width, this.height);
     });
   },
+  clearTail (tail) {
+    ctx.clearRect(tail.x * this.width, tail.y * this.height, this.width, this.height);
+  },
+  clearCanvas (snake) {
+    ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+  }
 }
-SnakeControl.init();
-SnakeView.init();
+SnakeControl.gameStart();
