@@ -20,6 +20,7 @@ document.addEventListener('keyup', (e) => {
 let SnakeModel = {
   numRows: 6,
   numCols: 5,
+  addSnakeS: false, // 是否增加蛇的长度，依据：是否吃了食物
   snake: [],
   init () {
     this.snake.length = 0;
@@ -47,54 +48,94 @@ let SnakeModel = {
       default:
           break;
     }
+    // 判断是否吃了食物
+    if(SnakeControl.newFood.x == newHead.x && SnakeControl.newFood.y == newHead.y) {
+      this.addSnakeS = true;
+    } else {
+      this.addSnakeS = false;
+    }
     if (SnakeControl.checkCollisions(newHead, this.snake)) {
       // 添加蛇头部
       this.snake.push(newHead);
       // 清除画布
       SnakeControl.clearTail(this.snake[0]);
+
       // 移除蛇尾部
-      this.snake.shift();
+      // 如果是吃了食物就不去掉尾部
+      if(this.addSnakeS == false) {
+        this.snake.shift();
+      } else {
+        SnakeControl.createFoodS = true;
+        // 重新创建食物
+        SnakeControl.createFood();
+      }
     }
     // 游戏是否结束
     if(!SnakeControl.gameStartS) {
       SnakeControl.gameStart();
     }
+  },
+  // 随机产生一个食物
+  randomFood () {
+    let newFood = {x: '', y : ''};
+    newFood.x = Math.floor(Math.random() * (SnakeControl.foodMaxW));
+    newFood.y = Math.floor(Math.random() * (SnakeControl.foodMaxH));
+    this.snake.forEach((item,index) => {
+      if(newFood.x == item.x && newFood.y == item.y) {
+        this.randomFood ();
+        console.log('在蛇身了');
+        SnakeControl.createFoodS = false;
+        return false;
+      }
+    });
+    console.log(newFood,SnakeControl.foodMaxW,SnakeControl.foodMaxH);
+    return newFood;
   }
 }
 
 // 控制器  C
 let SnakeControl = {
-  speed: 300,
-  curDirect: 'right', // 记录当前方向
-  gameStartS:  true, // 游戏开始状态
+  speed: 50,
+  curDirect: '', // 记录当前方向
+  gameStartS:  '', // 游戏开始状态
+  createFoodS: '', // 生成食物的状态
+  foodMaxW: '', // 食物的最大横坐标
+  foodMaxH: '', // 食物的最大纵坐标
+  newFood: '', // 记录model产生的食物坐标
   timer: '',
   init () {
+    this.curDirect = 'right';
     clearTimeout(this.timer);
+    this.foodMaxW = ctx.canvas.width / SnakeView.width;
+    this.foodMaxH = ctx.canvas.height / SnakeView.height;
     SnakeModel.init();
     this.move();
   },
   gameStart () {
+    this.curDirect = 'right';
     this.gameStartS = true;
+    this.createFoodS = true;
     this.init();
     SnakeView.init();
+    this.createFood();
   },
   // 上下左右按键移动蛇的位置
   handleInput (keyCode) {
       switch (keyCode) {
       case 'left':
-          // if(this.curDirect == 'right' || this.curDirect == 'left') return;
+         if(this.curDirect == 'right' || this.curDirect == 'left') return;
           this.curDirect = keyCode;
           break;
       case 'up':
-          //if(this.curDirect == 'down' || this.curDirect == 'up') return;
+          if(this.curDirect == 'down' || this.curDirect == 'up') return;
           this.curDirect = keyCode;
           break;
       case 'right':
-        //  if(this.curDirect == 'left' || this.curDirect == 'right') return;
+         if(this.curDirect == 'left' || this.curDirect == 'right') return;
           this.curDirect = keyCode;
           break;
       case 'down':
-        //  if(this.curDirect == 'up' || this.curDirect == 'down') return;
+         if(this.curDirect == 'up' || this.curDirect == 'down') return;
           this.curDirect = keyCode;
           break;
       default:
@@ -105,11 +146,12 @@ let SnakeControl = {
     return SnakeModel.snake;
   },
   move () {
-    this.timer = setInterval(() => {
-      SnakeModel.snakeMove(this.curDirect);
-      if(this.gameStartS == true) {
-        SnakeView.drawSnake();
-      }
+   this.timer = setInterval(() => {
+      // SnakeModel.snakeMove(this.curDirect);
+      // if(this.gameStartS == true) {
+      //   SnakeView.drawSnake();
+      // }
+      SnakeControl.createFood();
     }, this.speed);
   },
   clearTail (tail) {
@@ -119,25 +161,42 @@ let SnakeControl = {
   checkCollisions (newHead, oldSNake) {
     let snake = oldSNake;
     let length = oldSNake.length;
+    // 边界检测
+    if (newHead.x == 50 || newHead.x < 0 ||  newHead.y < 0 || newHead.y == 50) {
+      this.handleGameLost();
+      return false;
+    }
     // 遍历蛇的坐标，与蛇头作对比，如果蛇头与蛇身坐标相等即为碰撞
     snake.forEach((item,index) => {
-      if(index == length-1) return;
+      if(index == length - 1) return;
       if(newHead.x == item.x && newHead.y == item.y) {
-        alert('游戏失败');
-        this.gameStartS = false;
-        // 清除画布
-        SnakeView.clearCanvas();
+        this.handleGameLost();
         return false;
       }
     });
     return true;
+  },
+  handleGameLost () {
+    console.log('游戏失败');
+    this.gameStartS = false;
+    // 清除画布
+    SnakeView.clearCanvas();
+  },
+  createFood () {
+    // 游戏开始马上生成食物，蛇吃了食物后，马上生成食物
+    if(this.createFoodS) {
+      this.newFood = SnakeModel.randomFood();
+      SnakeView.drawFood(this.newFood);
+      // 生成一次食物后，关闭生成，等到蛇吃了食物才能重新生成
+    //  this.createFoodS = false;
+    }
   }
 }
 
 // 视图 V 绘制
 let SnakeView = {
-  width: 10,
-  height: 10,
+  width: 10, // 单个方块的宽度
+  height: 10, // 单个方块的高度
   row: 0,
   col: 0,
   snakeColor: '#89EA65',
@@ -151,6 +210,10 @@ let SnakeView = {
       ctx.fillStyle = this.snakeColor;
       ctx.fillRect(item.x * this.width, item.y * this.height, this.width, this.height);
     });
+  },
+  drawFood (food) {
+    ctx.fillStyle = this.snakeColor;
+    ctx.fillRect(food.x * this.width, food.y * this.height, this.width, this.height);
   },
   clearTail (tail) {
     ctx.clearRect(tail.x * this.width, tail.y * this.height, this.width, this.height);
