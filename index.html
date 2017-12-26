@@ -11,11 +11,26 @@
       canvas {
         border: 1px solid #3FBBDF;
       }
+      .action {
+        position:absolute;
+        right:50px;
+        top:50px;
+      }
     </style>
   </head>
   <body>
     <div id="container">
 
+    </div>
+    <div class="action">
+      <button type="button" name="button" onclick="SnakeControl.gameStart()">游戏开始</button>
+      <div style="">
+        <select onchange="SnakeControl.changeDifficulty(this)" onkeydown="SnakeControl.selectEvent()">
+          <option value="300">简单</option>
+          <option value="150">一般</option>、
+          <option value="50">困难</option>
+        </select>
+      </div>
     </div>
     <script src="js/engine.js" charset="utf-8"></script>
     <script src="js/game.js" charset="utf-8"></script>

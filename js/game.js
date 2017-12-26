@@ -26,7 +26,7 @@ let SnakeModel = {
     this.snake.length = 0;
     // 第一个元素是尾部
     for (row = 0; row < this.numRows; row++) {
-        this.snake.push({x: row, y: 0});
+        this.snake.push({x: row, y: 10});
     }
   },
   snakeMove (direction) {
@@ -71,31 +71,31 @@ let SnakeModel = {
       }
     }
     // 游戏是否结束
-    if(!SnakeControl.gameStartS) {
-      SnakeControl.gameStart();
-    }
+    // if(!SnakeControl.gameStartS) {
+    //
+    // }
   },
   // 随机产生一个食物
   randomFood () {
     let newFood = {x: '', y : ''};
-    newFood.x = Math.floor(Math.random() * (SnakeControl.foodMaxW));
-    newFood.y = Math.floor(Math.random() * (SnakeControl.foodMaxH));
-    this.snake.forEach((item,index) => {
-      if(newFood.x == item.x && newFood.y == item.y) {
-        this.randomFood ();
-        console.log('在蛇身了');
-        SnakeControl.createFoodS = false;
-        return false;
-      }
-    });
-    console.log(newFood,SnakeControl.foodMaxW,SnakeControl.foodMaxH);
+    let isOkFood = true;
+    while (isOkFood) {
+      newFood.x = Math.floor(Math.random() * (SnakeControl.foodMaxW));
+      newFood.y = Math.floor(Math.random() * (SnakeControl.foodMaxH));
+      // 不相等的情况下再次创建食物坐标
+      this.snake.forEach((item,index) => {
+        if(newFood.x != item.x && newFood.y != item.y) {
+          isOkFood = false;
+        }
+      });
+    }
     return newFood;
   }
 }
 
 // 控制器  C
 let SnakeControl = {
-  speed: 50,
+  speed: 500,
   curDirect: '', // 记录当前方向
   gameStartS:  '', // 游戏开始状态
   createFoodS: '', // 生成食物的状态
@@ -111,7 +111,24 @@ let SnakeControl = {
     SnakeModel.init();
     this.move();
   },
+  changeDifficulty (t) {
+    var index = t.selectedIndex;
+    var val = t.options[index].value;
+    this.speed = val;
+    this.gameStart();
+  },
+  selectEvent () {
+    console.log(event);
+    if(event.keyCode == 38 ||event.keyCode == 40){
+      //使HTML元素原来默认的事件失效
+        event.returnValue=false;
+        return false;
+    }
+  },
   gameStart () {
+    // 清除画布
+    SnakeView.clearCanvas();
+    console.log(111);
     this.curDirect = 'right';
     this.gameStartS = true;
     this.createFoodS = true;
@@ -146,13 +163,14 @@ let SnakeControl = {
     return SnakeModel.snake;
   },
   move () {
-   this.timer = setInterval(() => {
-      // SnakeModel.snakeMove(this.curDirect);
-      // if(this.gameStartS == true) {
-      //   SnakeView.drawSnake();
-      // }
-      SnakeControl.createFood();
-    }, this.speed);
+     this.timer = setInterval(() => {
+         if(this.gameStartS == true) {
+          SnakeModel.snakeMove(this.curDirect);
+          SnakeView.drawSnake();
+        } else {
+          clearTimeout(this.timer);
+        }
+      }, this.speed);
   },
   clearTail (tail) {
     SnakeView.clearTail(tail)
@@ -177,7 +195,7 @@ let SnakeControl = {
     return true;
   },
   handleGameLost () {
-    console.log('游戏失败');
+    alert('游戏失败');
     this.gameStartS = false;
     // 清除画布
     SnakeView.clearCanvas();
@@ -188,7 +206,7 @@ let SnakeControl = {
       this.newFood = SnakeModel.randomFood();
       SnakeView.drawFood(this.newFood);
       // 生成一次食物后，关闭生成，等到蛇吃了食物才能重新生成
-    //  this.createFoodS = false;
+     this.createFoodS = false;
     }
   }
 }
@@ -222,4 +240,3 @@ let SnakeView = {
     ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
   }
 }
-SnakeControl.gameStart();
